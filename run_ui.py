@@ -61,6 +61,9 @@ if __name__ == "__main__":
     portable = ROOT / "artifacts" / "tools" / "espeak-1.51" / "eSpeak NG"
     if portable.is_dir():
         os.environ["PATH"] = str(portable) + os.pathsep + os.environ.get("PATH", "")
+    tesseract = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Tesseract-OCR"
+    if (tesseract / "tesseract.exe").is_file():
+        os.environ["PATH"] = str(tesseract) + os.pathsep + os.environ.get("PATH", "")
     origins = args.allow_origin or [value.strip() for value in
                                   os.environ.get("MICRO_ALLOWED_ORIGINS", "").split(",") if value.strip()]
     uvicorn.run(create_ui(args.speech_quality, origins), host=args.host, port=args.port)

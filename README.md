@@ -1,4 +1,160 @@
-﻿# Micro-models
+# Micro-models
+
+## Start here: four AI helpers for your website
+
+Imagine four helpers working behind your website:
+
+| Helper | You give it | It gives you |
+| --- | --- | --- |
+| Ask | A question, like "What is 2 plus 2?" | An answer, like "4" |
+| Read | A PDF or a picture of printed words | The words inside it; you can then ask about them |
+| Listen | A recording of English speech | The words that were spoken |
+| Speak | English words | An audio file that reads them aloud |
+
+Your **website** has the buttons and boxes. This project is the **server**:
+the program that does the work when someone clicks a button. The **service URL**
+is the server's address. Your website sends requests to that address.
+You do not need to train a model to try these helpers.
+Image and video generation are future features, so they do not work yet.
+
+### 1. Turn on all four helpers
+
+In this prepared workspace, open PowerShell and paste:
+
+```powershell
+cd F:\Projects\Micro-models
+.\.venv\Scripts\python.exe run_ui.py --port 8080 --allow-origin http://localhost:5500 --allow-origin http://127.0.0.1:5500
+```
+
+Keep that window open. Open **http://localhost:8080** in your browser.
+One command starts all four services; you do not need a separate port for each.
+The first request can take longer because a model must load.
+For a fresh installation, follow **Install a fresh copy** below first, including
+the text model, TTS extra, eSpeak and Tesseract setup.
+
+### 2. Try the buttons
+
+| Tab | What to do | What you should see or hear |
+| --- | --- | --- |
+| Text | Ask "What is 2 plus 2?" | An answer containing 4 |
+| Documents & questions | Choose a PDF, click **Extract & prepare for questions**, then ask about its contents | An answer with its source file |
+| Transcribe audio | Choose a short English recording | The spoken words as text |
+| Create speech | Type "Hello! Welcome to my website." and click **Create audio** | An audio player; press play |
+| Connect your app | Enter your service URL and click **Connect & check services** | The four service statuses |
+
+Use PDFs up to 8 pages and files up to 10 MB. Audio recordings can be up to
+60 seconds. Start with English and short questions. Check AI answers against
+the original document because answers can be wrong. Document questions use
+matching excerpts rather than reading every page into the model at once.
+The UI uses Kokoro's natural voice. `--speech-quality fast` selects robotic eSpeak.
+
+### 3. Try a small website of your own
+
+There is a ready-made website in [ui/website-example.html](ui/website-example.html).
+It has buttons for all four helpers. In a **second** PowerShell window, run:
+
+```powershell
+cd F:\Projects\Micro-models
+.\.venv\Scripts\python.exe -m http.server 5500 --bind 127.0.0.1 --directory ui
+```
+
+Open **http://localhost:5500/website-example.html**. Keep both PowerShell windows
+open: one runs the AI helpers, and the other runs the example website.
+Open the page through this address instead of double-clicking the HTML file.
+Try its question, document, recording and speech buttons.
+
+### 4. Add a helper to your existing website
+
+Copy [ui/client.js](ui/client.js) into your website's folder. This small file
+knows how to talk to all four helpers. Add this HTML where you want a question box:
+
+```html
+<textarea id="my-question" placeholder="Ask something"></textarea>
+<button id="my-ask">Ask</button>
+<p id="my-answer" role="status"></p>
+
+<script type="module">
+  import { MicroModelsClient } from './client.js';
+
+  // CHANGE THIS when your AI server gets an online HTTPS address.
+  const ai = new MicroModelsClient('http://localhost:8080');
+  const button = document.getElementById('my-ask');
+  const answer = document.getElementById('my-answer');
+
+  button.addEventListener('click', async () => {
+    const question = document.getElementById('my-question').value.trim();
+    if (!question) { answer.textContent = 'Type a question first.'; return; }
+    button.disabled = true;
+    answer.textContent = 'Thinking...';
+    try {
+      const reply = await ai.text(question);
+      answer.textContent = reply.text;
+    } catch (error) {
+      answer.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>
+```
+
+**The few things to change:**
+
+1. Put `client.js` next to your HTML, or change the `import` path to its location.
+2. Replace the service URL when you deploy the AI server.
+3. Give your website permission to call the server using `--allow-origin`.
+   A local React website at `http://localhost:5173`, for example, needs
+   `--allow-origin http://localhost:5173` on the server command.
+4. Change the button words, colors and layout to match your website.
+
+For React or another framework, import the same client into your component and
+call `ai.text(...)` in your button's click handler. The full example page shows
+how to call `ai.prepareDocument(file)`, `ai.transcribe(file)` and `ai.speech(text)`.
+
+### 5. Put your website online
+
+You need **two online things**: your website and the AI server. Publishing the
+website alone does not publish these services. Ask an adult to help with a
+hosting account and deployment. A GitHub repository holds code; it does not run
+the Python server.
+
+Once your AI server has an HTTPS address, change its URL in your website:
+
+```javascript
+const ai = new MicroModelsClient('https://YOUR-AI-SERVER');
+```
+
+Start the deployed server behind HTTPS hosting with your website's real origin:
+
+```powershell
+.\.venv\Scripts\python.exe run_ui.py --host 0.0.0.0 --port 8080 --allow-origin https://YOUR-WEBSITE
+```
+
+Replace `YOUR-AI-SERVER` and `YOUR-WEBSITE` with your addresses. Your hosting must
+provide HTTPS; this command serves HTTP by itself. Do not use `localhost` for
+a shared online server: it means the computer of the person visiting your site.
+If your service has a private API key, keep it in your website's backend
+(server-side code), not in the page visitors download. Website-origin permission
+does not replace authentication. See [app integration](docs/app-integration.md)
+for persistent document storage and private-user access.
+
+### Something went wrong?
+
+| Message or problem | Simple fix |
+| --- | --- |
+| Connection refused | Start the AI server and keep its PowerShell window open |
+| Port already in use | Open the running UI, or choose a new `--port` and update your website's service URL |
+| Cannot reach the service | Check the URL, keep both servers on, and allow your website's exact origin |
+| First request is slow | Wait while the model loads; fresh copies also download models |
+| OCR error | Install Tesseract with English data; the launcher detects its usual Windows install folder |
+| Robotic voice | Start without `--speech-quality fast` and install the TTS extra |
+| Busy / 429 | Wait for the current request, then try again |
+
+Press **Ctrl+C** in each server window when you want to stop it.
+
+---
+
+## Technical setup and reference
 
 Small Python services for **English text, speech and documents on a CPU**. Run only the service you need to keep memory and compute usage low.
 
@@ -16,7 +172,7 @@ The target is low-volume Google Cloud use within a free-tier budget. Image and v
 
 **Customization:** edit configuration files to change instructions, speech terminology, pronunciations and document fields. The baseline uses existing pretrained models. Training tools are included, but useful domain-trained weights require your own examples and evaluation data.
 
-The default speech voice is robotic because it prioritizes low compute. Kokoro is an optional natural-voice backend with larger dependencies. Document extraction provides text and configured fields; advanced tables, handwriting and mathematical notation may need stronger models later.
+Standalone speech workers default to robotic eSpeak to prioritize low compute. The combined UI defaults to Kokoro's natural voice with larger dependencies. Document extraction provides text and configured fields; advanced tables, handwriting and mathematical notation may need stronger models later.
 
 ## Quick start in this existing workspace
 

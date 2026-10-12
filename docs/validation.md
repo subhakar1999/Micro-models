@@ -20,3 +20,15 @@ Offline customization tests use a random four-layer Qwen2 fixture: block-influen
 Scanned-image OCR and Kokoro natural speech were not exercised. The PDF smoke only covers PDFium text extraction and field rules. Multi-user authorization, persistent Cloud Run memory, stream processing, multi-LoRA batching and domain-trained model accuracy are not claimed. Training example files demonstrate format only; no domain-trained weights have been produced.
 
 Before cloud deployment, run the selected container's real smoke test and measure native process **peak** memory. Keep the text context, uploads, page counts and output tokens bounded. Measure task accuracy on the intended domain and languages rather than extrapolating from the tiny sanity fixtures.
+# Combined UI validation (2026-10-12)
+
+The combined server was tested through live HTTP requests for text answers,
+PDF text extraction, printed-image OCR with Tesseract, English audio transcription,
+and Kokoro natural-voice WAV generation. All returned successful responses.
+The generated Kokoro sample was a mono, 24 kHz WAV; this verifies generation,
+not a listening-based quality score. The beginner website was served separately
+on port 5500 and returned HTTP 200. Its JavaScript passed a syntax check.
+The automated suite passed 17 tests, including browser-origin and API-key checks.
+
+Earlier development notes follow.
+

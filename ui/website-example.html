@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My AI website</title>
+<style>body{font:16px system-ui;max-width:800px;margin:30px auto;padding:20px;background:#f5f7fb;color:#253345}section{background:white;padding:20px;border-radius:14px;margin:20px 0}input,textarea,button{font:inherit;padding:10px;margin:6px 0;border-radius:6px;border:1px solid #ccd6e5;box-sizing:border-box}input,textarea{width:100%}button{background:#285dda;color:white;cursor:pointer}button:disabled{opacity:.5}pre{white-space:pre-wrap;overflow-wrap:anywhere}audio{width:100%}label{display:block}</style></head>
+<body>
+<h1>My AI website</h1><p>Ask a question, read a document, hear words, or turn a recording into text.</p>
+<section><h2>Ask a question</h2><form id="chat"><label for="prompt">Question</label><textarea id="prompt" required>What is 2 plus 2?</textarea><button>Ask</button></form><pre id="answer" role="status"></pre></section>
+<section><h2>Read a document</h2><form id="upload"><label for="pdf">PDF or image</label><input id="pdf" type="file" accept=".pdf,image/*" required><button>Prepare document</button></form><pre id="document" role="status"></pre><form id="ask-document"><label for="question">Document question</label><input id="question" required placeholder="What is the invoice total?"><button id="document-button" disabled>Ask about document</button></form><pre id="document-answer" role="status"></pre></section>
+<section><h2>Hear your words</h2><form id="speak"><label for="words">English text</label><textarea id="words" required maxlength="1500">Hello! Welcome to my website.</textarea><button>Make speech</button></form><pre id="speech-status" role="status"></pre><audio id="player" controls></audio></section>
+<section><h2>Turn a recording into words</h2><form id="listen"><label for="recording">English recording (up to 60 seconds)</label><input id="recording" type="file" accept="audio/*" required><button>Transcribe</button></form><pre id="transcript" role="status"></pre></section>
+<script type="module">
+import {MicroModelsClient} from './client.js';
+
+// CHANGE THIS to your deployed HTTPS service URL when your website goes online.
+const SERVICE_URL = 'http://localhost:8080';
+const ai = new MicroModelsClient(SERVICE_URL);
+const $ = id => document.getElementById(id);
+let documentSession = null, speechUrl = null;
+function handle(formId, outputId, action) {
+  $(formId).addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = event.currentTarget.querySelector('button');
+    button.disabled = true; $(outputId).textContent = 'Working…';
+    try { await action(); }
+    catch (error) { $(outputId).textContent = error.message; }
+    finally { button.disabled = formId === 'ask-document' && !documentSession; }
+  });
+}
+handle('chat', 'answer', async () => {
+  $('answer').textContent = (await ai.text($('prompt').value)).text;
+});
+handle('upload', 'document', async () => {
+  documentSession = null; $('document-button').disabled = true; $('document-answer').textContent = '';
+  documentSession = await ai.prepareDocument($('pdf').files[0]);
+  $('document').textContent = 'Ready! You can ask a question now.'; $('document-button').disabled = false;
+});
+handle('ask-document', 'document-answer', async () => {
+  if (!documentSession) throw new Error('Prepare a document first.');
+  const reply = await ai.text($('question').value, {tenant: documentSession.tenant});
+  $('document-answer').textContent = reply.text + '\nSources: ' + reply.sources.join(', ');
+});
+handle('speak', 'speech-status', async () => {
+  const wav = await ai.speech($('words').value);
+  if (speechUrl) URL.revokeObjectURL(speechUrl);
+  speechUrl = URL.createObjectURL(wav); $('player').src = speechUrl;
+  $('speech-status').textContent = 'Ready! Press play to listen.';
+});
+handle('listen', 'transcript', async () => {
+  $('transcript').textContent = (await ai.transcribe($('recording').files[0])).text;
+});
+</script>
+</body></html>
