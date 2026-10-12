@@ -1,0 +1,7 @@
+{
+  "task": "tts",
+  "model": "hexgrad/Kokoro-82M",
+  "language": "a",
+  "voice": "af_heart",
+  "lexicon": {"GCP": "Google Cloud Platform", "API": "A P I"}
+}

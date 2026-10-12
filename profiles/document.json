@@ -1,0 +1,8 @@
+{
+  "task": "document",
+  "language": "eng",
+  "fields": {
+    "invoice_number": "(?i)invoice\\s*(?:number|no\\.?|#)\\s*[:#]?\\s*([A-Z0-9-]+)",
+    "total": "(?im)^\\s*(?:grand\\s+)?total\\s*[:]?\\s*([$£€]?\\s*[0-9][0-9,.]*)"
+  }
+}

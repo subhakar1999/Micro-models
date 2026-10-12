@@ -1,0 +1,6 @@
+{
+  "task": "asr",
+  "model": "tiny.en",
+  "language": "en",
+  "domain_terms": "Google Cloud, Python, micro models, invoice"
+}

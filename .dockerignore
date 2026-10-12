@@ -1,0 +1,11 @@
+.venv
+.python
+.uv-cache
+.git
+data
+models
+artifacts
+tests
+__pycache__
+.env
+researchpaper.md

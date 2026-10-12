@@ -1,0 +1,6 @@
+{
+  "task": "image",
+  "model": "Efficient-Large-Model/Sana_600M_1024px_diffusers",
+  "steps": 20,
+  "guidance_scale": 4.5
+}

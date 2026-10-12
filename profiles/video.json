@@ -1,0 +1,6 @@
+{
+  "task": "video",
+  "model": "Lightricks/LTX-Video-0.9.5",
+  "steps": 30,
+  "guidance_scale": 3.0
+}

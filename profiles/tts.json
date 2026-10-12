@@ -1,0 +1,6 @@
+{
+  "task": "tts",
+  "backend": "espeak",
+  "language": "en",
+  "lexicon": {"GCP": "Google Cloud Platform", "API": "A P I"}
+}

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Micro-models · Local workspace</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#18312d;background:#f3f6f2}*{box-sizing:border-box}body{margin:0}header{padding:32px max(24px,calc((100vw - 1050px)/2));background:#173f36;color:white}header p{color:#c5ded3;margin-bottom:0}h1{margin:0;font-size:30px}main{max-width:1050px;margin:28px auto;padding:0 20px}nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}button,.download{background:#1c6651;color:white;border:0;border-radius:9px;padding:12px 18px;font:inherit;cursor:pointer}nav button{background:#e0e9e2;color:#18312d}nav button[aria-selected=true]{background:#173f36;color:white}button:disabled{opacity:.5;cursor:wait}.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:white;border:1px solid #dbe4dc;border-radius:16px;padding:24px;margin-bottom:20px}h2{margin-top:0;font-size:21px}label{display:block;font-weight:600;margin:16px 0 8px}textarea,input{width:100%;padding:12px;border:1px solid #b9cbbf;border-radius:8px;font:inherit}textarea{min-height:110px;resize:vertical}input[type=file]{background:#f5f8f5}form button{margin-top:16px}p{line-height:1.6}.muted{color:#64766d;font-size:14px}.result{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;max-height:460px;overflow:auto}.status{min-height:24px;margin-top:12px;color:#47685a}.error{color:#a32626}audio{width:100%;margin:16px 0}.download{display:inline-block;text-decoration:none}details{margin-top:20px}summary{cursor:pointer}#api-key{max-width:320px}button:focus-visible,a:focus-visible{outline:3px solid #dba847;outline-offset:3px}@media(max-width:700px){.grid{grid-template-columns:1fr}header{padding:24px}main{margin-top:20px}}
+</style>
+</head>
+<body>
+<header><h1>Micro-models</h1><p>Your local workspace for documents, text and speech.</p></header>
+<main>
+<nav aria-label="Services" role="tablist">
+<button role="tab" aria-selected="true" data-tab="documents">Documents & questions</button>
+<button role="tab" aria-selected="false" data-tab="text">Text</button>
+<button role="tab" aria-selected="false" data-tab="asr">Transcribe audio</button>
+<button role="tab" aria-selected="false" data-tab="tts">Create speech</button>
+</nav>
+<section id="documents" class="panel active">
+<div class="grid">
+<div class="card"><h2>Upload a document</h2><p class="muted">PDF or image · up to 10 MB and 8 PDF pages. Scanned pages require Tesseract.</p>
+<form id="document-form"><label for="document-file">Document</label><input id="document-file" type="file" accept=".pdf,image/*" required><button>Extract & prepare for questions</button></form>
+<p id="document-status" class="status" role="status"></p>
+<details><summary>Extracted text & fields</summary><div id="document-result" class="result"></div></details></div>
+<div class="card"><h2>Ask about your document</h2><p id="document-name" class="muted">Upload a document first. Each upload starts a separate question session.</p>
+<form id="question-form"><label for="question">Your question</label><textarea id="question" placeholder="What is the payment due date?" maxlength="6000" required></textarea><button id="ask-button" disabled>Ask question</button></form>
+<p id="question-status" class="status" role="status"></p><div id="question-result" class="result" aria-live="polite"></div><p class="muted">Answers use matching document excerpts. Check answers against the original; the small model can make mistakes.</p></div>
+</div></section>
+<section id="text" class="panel"><div class="card"><h2>Ask the text model</h2><form id="text-form"><label for="prompt">Question or instruction</label><textarea id="prompt" maxlength="6000" placeholder="Explain Python in one sentence." required></textarea><button>Generate answer</button></form><p id="text-status" class="status" role="status"></p><div id="text-result" class="result" aria-live="polite"></div></div></section>
+<section id="asr" class="panel"><div class="card"><h2>Transcribe English audio</h2><p class="muted">Up to 60 seconds and 10 MB. First use may download the recognition model.</p><form id="asr-form"><label for="audio-file">Audio file</label><input id="audio-file" type="file" accept="audio/*" required><button>Transcribe</button></form><p id="asr-status" class="status" role="status"></p><div id="asr-result" class="result" aria-live="polite"></div></div></section>
+<section id="tts" class="panel"><div class="card"><h2>Turn text into speech</h2><p class="muted">The default natural voice takes longer on first use while its model loads. English text, up to 1,500 characters.</p><form id="tts-form"><label for="speech-text">English text</label><textarea id="speech-text" maxlength="1500" required placeholder="Hello from Micro-models."></textarea><label for="speed">Speed</label><input id="speed" type="number" min="0.5" max="2" step="0.1" value="1" required><button>Create audio</button></form><p id="tts-status" class="status" role="status"></p><div id="tts-result"></div></div></section>
+<details class="card"><summary>Connection settings</summary><label for="api-key">API key (if configured)</label><input id="api-key" type="password" autocomplete="off"><p class="muted">Used for requests in this browser tab only.</p></details>
+<p class="muted">Runs on your computer. Models load on first use and stay in memory until the server stops. Image and video generation are not available yet.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);let tenant=null,audioUrl=null;
+document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{
+ document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b===button)));
+ document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===button.dataset.tab));
+}));
+async function request(task,path,body){
+ const headers={};if($('api-key').value)headers.Authorization='Bearer '+$('api-key').value;
+ if(!(body instanceof FormData)){headers['Content-Type']='application/json';body=JSON.stringify(body);}
+ const response=await fetch('/services/'+task+'/v1/'+path,{method:'POST',headers,body});
+ if(!response.ok){let message='Request failed ('+response.status+')';try{const data=await response.json();message=typeof data.detail==='string'?data.detail:JSON.stringify(data.detail);}catch{}throw Error(message);}
+ return task==='tts'?response.blob():response.json();
+}
+function bind(formId,statusId,action){$(formId).addEventListener('submit',async event=>{
+ event.preventDefault();const button=event.currentTarget.querySelector('button'),status=$(statusId);button.disabled=true;status.classList.remove('error');status.textContent='Working… first use may take longer while the model loads.';
+ try{await action();status.textContent='Done.';}catch(error){status.classList.add('error');status.textContent=error.message;}finally{button.disabled=formId==='question-form'&&!tenant;}
+});}
+function upload(id){const file=$(id).files[0];if(!file)throw Error('Choose a file first.');if(file.size>10*1024*1024)throw Error('Choose a file smaller than 10 MB.');const body=new FormData();body.append('file',file);return body;}
+bind('document-form','document-status',async()=>{
+ tenant=null;$('ask-button').disabled=true;$('question-result').textContent='';$('document-result').textContent='';$('document-name').textContent='Preparing document…';
+ const data=await request('document','document',upload('document-file'));
+ $('document-result').textContent=data.text+'\n\nFields: '+JSON.stringify(data.fields,null,2);
+ if(!data.text.trim())throw Error('No text was extracted. Try a document with selectable text.');
+ const next='doc-'+crypto.randomUUID();await request('text','memory',{tenant:next,source:$('document-file').files[0].name,text:data.text});
+ tenant=next;$('document-name').textContent='Ready: '+$('document-file').files[0].name;$('ask-button').disabled=false;
+});
+bind('question-form','question-status',async()=>{
+ if(!tenant)throw Error('Upload and prepare a document first.');$('question-result').textContent='';
+ const data=await request('text','text',{tenant,prompt:$('question').value,max_tokens:256});
+ $('question-result').textContent=data.text+'\n\n'+(data.sources.length?'Sources: '+[...new Set(data.sources)].join(', '):'No matching document excerpts were found. Try using words from the document.');
+});
+bind('text-form','text-status',async()=>{$('text-result').textContent='';const data=await request('text','text',{tenant:'ui-general',prompt:$('prompt').value,max_tokens:256});$('text-result').textContent=data.text;});
+bind('asr-form','asr-status',async()=>{$('asr-result').textContent='';const data=await request('asr','asr',upload('audio-file'));$('asr-result').textContent=data.text;});
+bind('tts-form','tts-status',async()=>{
+ const blob=await request('tts','tts',{text:$('speech-text').value,speed:Number($('speed').value)});
+ if(audioUrl)URL.revokeObjectURL(audioUrl);audioUrl=URL.createObjectURL(blob);$('tts-result').replaceChildren();
+ const player=document.createElement('audio');player.controls=true;player.src=audioUrl;
+ const link=document.createElement('a');link.href=audioUrl;link.download='speech.wav';link.className='download';link.textContent='Download WAV';$('tts-result').append(player,link);
+});
+</script>
+</body></html>

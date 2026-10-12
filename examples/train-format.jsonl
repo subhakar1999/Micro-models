@@ -1,0 +1,2 @@
+{"messages":[{"role":"system","content":"Answer invoice questions in English."},{"role":"user","content":"Invoice INV-100 has total 25.00. Return the invoice number."},{"role":"assistant","content":"INV-100"}]}
+{"messages":[{"role":"system","content":"Answer invoice questions in English."},{"role":"user","content":"Invoice INV-101 has total 17.50. Return the total."},{"role":"assistant","content":"17.50"}]}
