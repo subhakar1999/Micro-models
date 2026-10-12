@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Micro-models integration demo</title>
+<style>body{font:16px system-ui;background:#f5f7fb;color:#253345;max-width:700px;margin:60px auto;padding:20px}label{display:block;margin:20px 0 8px}input,textarea,button{font:inherit;padding:12px;border:1px solid #ccd6e5;border-radius:8px;width:100%;box-sizing:border-box}button{background:#285dda;color:white;margin-top:20px;cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere}button:disabled{opacity:.5}</style>
+<h1>Connect your app</h1><p>This standalone page uses only the JavaScript client and a service URL.</p>
+<form id="form"><label for="url">Service base URL</label><input id="url" type="url" required><label for="key">API key (optional)</label><input id="key" type="password" autocomplete="off"><label for="prompt">Question</label><textarea id="prompt" required>What is 2 plus 2? Answer briefly.</textarea><button id="send">Send request</button></form><pre id="result" role="status"></pre>
+<script type="module">
+import {MicroModelsClient} from './client.js';
+document.getElementById('url').value=location.origin;
+document.getElementById('form').addEventListener('submit',async event=>{
+ event.preventDefault();const result=document.getElementById('result'),button=document.getElementById('send');button.disabled=true;result.textContent='Working…';
+ try{const ai=new MicroModelsClient(document.getElementById('url').value,{apiKey:document.getElementById('key').value});const reply=await ai.text(document.getElementById('prompt').value);result.textContent=reply.text;}
+ catch(error){result.textContent=error.message;}finally{button.disabled=false;}
+});
+</script></html>

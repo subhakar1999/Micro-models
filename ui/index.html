@@ -6,15 +6,20 @@
 <style>
 :root{font-family:system-ui,sans-serif;color:#18312d;background:#f3f6f2}*{box-sizing:border-box}body{margin:0}header{padding:32px max(24px,calc((100vw - 1050px)/2));background:#173f36;color:white}header p{color:#c5ded3;margin-bottom:0}h1{margin:0;font-size:30px}main{max-width:1050px;margin:28px auto;padding:0 20px}nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}button,.download{background:#1c6651;color:white;border:0;border-radius:9px;padding:12px 18px;font:inherit;cursor:pointer}nav button{background:#e0e9e2;color:#18312d}nav button[aria-selected=true]{background:#173f36;color:white}button:disabled{opacity:.5;cursor:wait}.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{background:white;border:1px solid #dbe4dc;border-radius:16px;padding:24px;margin-bottom:20px}h2{margin-top:0;font-size:21px}label{display:block;font-weight:600;margin:16px 0 8px}textarea,input{width:100%;padding:12px;border:1px solid #b9cbbf;border-radius:8px;font:inherit}textarea{min-height:110px;resize:vertical}input[type=file]{background:#f5f8f5}form button{margin-top:16px}p{line-height:1.6}.muted{color:#64766d;font-size:14px}.result{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;max-height:460px;overflow:auto}.status{min-height:24px;margin-top:12px;color:#47685a}.error{color:#a32626}audio{width:100%;margin:16px 0}.download{display:inline-block;text-decoration:none}details{margin-top:20px}summary{cursor:pointer}#api-key{max-width:320px}button:focus-visible,a:focus-visible{outline:3px solid #dba847;outline-offset:3px}@media(max-width:700px){.grid{grid-template-columns:1fr}header{padding:24px}main{margin-top:20px}}
 </style>
+<style>
+:root{color:#253345;background:#f5f7fb}header{background:white;color:#172d4b;border-bottom:1px solid #e1e7ef;padding-top:28px;padding-bottom:28px}header p{color:#66778c}h1{letter-spacing:-1px}button,.download{background:#285dda}nav button{background:white;border:1px solid #dce3ee;color:#516176}nav button[aria-selected=true]{background:#285dda;color:white;border-color:#285dda}.card{border-color:#e1e7ef;box-shadow:0 4px 18px #20334b05}input,textarea{border-color:#ccd6e5}input[type=file]{background:#f7f9fc}.muted{color:#66778c}.connection{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:24px}.badge{padding:5px 10px;border-radius:20px;background:#e6f3ee;color:#246346;font-size:13px}.result:not(:empty){padding:16px;background:#f5f8fc;border-radius:10px;border:1px solid #e1e7ef}.connection-card input{max-width:none}#api-key{max-width:none}code{font-family:Consolas,monospace}.endpoint{overflow-wrap:anywhere}.status{font-size:14px}
+</style>
 </head>
 <body>
-<header><h1>Micro-models</h1><p>Your local workspace for documents, text and speech.</p></header>
+<header><h1>Micro-models</h1><p>Upload. Ask. Listen. A simple workspace for your AI services.</p></header>
 <main>
+<div class="connection"><span id="connection-badge" class="badge" role="status">Checking services…</span><span id="connection-url" class="muted"></span></div>
 <nav aria-label="Services" role="tablist">
 <button role="tab" aria-selected="true" data-tab="documents">Documents & questions</button>
 <button role="tab" aria-selected="false" data-tab="text">Text</button>
 <button role="tab" aria-selected="false" data-tab="asr">Transcribe audio</button>
 <button role="tab" aria-selected="false" data-tab="tts">Create speech</button>
+<button role="tab" aria-selected="false" data-tab="connect">Connect your app</button>
 </nav>
 <section id="documents" class="panel active">
 <div class="grid">
@@ -29,27 +34,39 @@
 <section id="text" class="panel"><div class="card"><h2>Ask the text model</h2><form id="text-form"><label for="prompt">Question or instruction</label><textarea id="prompt" maxlength="6000" placeholder="Explain Python in one sentence." required></textarea><button>Generate answer</button></form><p id="text-status" class="status" role="status"></p><div id="text-result" class="result" aria-live="polite"></div></div></section>
 <section id="asr" class="panel"><div class="card"><h2>Transcribe English audio</h2><p class="muted">Up to 60 seconds and 10 MB. First use may download the recognition model.</p><form id="asr-form"><label for="audio-file">Audio file</label><input id="audio-file" type="file" accept="audio/*" required><button>Transcribe</button></form><p id="asr-status" class="status" role="status"></p><div id="asr-result" class="result" aria-live="polite"></div></div></section>
 <section id="tts" class="panel"><div class="card"><h2>Turn text into speech</h2><p class="muted">The default natural voice takes longer on first use while its model loads. English text, up to 1,500 characters.</p><form id="tts-form"><label for="speech-text">English text</label><textarea id="speech-text" maxlength="1500" required placeholder="Hello from Micro-models."></textarea><label for="speed">Speed</label><input id="speed" type="number" min="0.5" max="2" step="0.1" value="1" required><button>Create audio</button></form><p id="tts-status" class="status" role="status"></p><div id="tts-result"></div></div></section>
-<details class="card"><summary>Connection settings</summary><label for="api-key">API key (if configured)</label><input id="api-key" type="password" autocomplete="off"><p class="muted">Used for requests in this browser tab only.</p></details>
-<p class="muted">Runs on your computer. Models load on first use and stay in memory until the server stops. Image and video generation are not available yet.</p>
+<section id="connect" class="panel"><div class="grid"><div class="card connection-card"><h2>Connect to a service URL</h2><p class="muted">Use this server or connect to your deployed Micro-models workspace.</p><form id="connection-form"><label for="base-url">Service base URL</label><input id="base-url" type="url" required placeholder="https://api.example.com"><label for="api-key">API key (if configured)</label><input id="api-key" type="password" autocomplete="off"><button>Connect & check services</button></form><p id="connect-status" class="status" role="status"></p><div id="connect-result" class="result"></div></div><div class="card"><h2>Add it to your app</h2><p>Configure one base URL and use the JavaScript client for text, documents, transcription and speech.</p><pre class="result" id="integration-example"></pre><p class="muted">Hosted websites need a reachable HTTPS service and an allowed website origin. Keep private API keys in your app's backend.</p><a href="/assets/client.js" download="client.js">Download JavaScript client</a> · <a href="/assets/integration.html" target="_blank" rel="noopener">Open integration demo</a></div></div></section>
+<p class="muted">Models load on first use. Image and video generation are not available yet.</p>
 </main>
-<script>
+<script type="module">
+import {MicroModelsClient} from '/assets/client.js';
 const $=id=>document.getElementById(id);let tenant=null,audioUrl=null;
+let client=new MicroModelsClient(location.origin);$('base-url').value=location.origin;
+function showConnection(){
+ $('connection-url').textContent=client.baseUrl;
+ $('integration-example').textContent="import {MicroModelsClient} from './client.js';\n\nconst ai = new MicroModelsClient("+JSON.stringify(client.baseUrl)+");\nconst answer = await ai.text('What is 2 plus 2?');\nconsole.log(answer.text);\n\nconst doc = await ai.prepareDocument(file);\nconst reply = await ai.text('What is the total?', {tenant: doc.tenant});";
+}
+async function checkConnection(){
+ $('connection-badge').textContent='Checking services…';
+ try{await client.services();const tasks=['text','document','asr','tts'];const checks=await Promise.all(tasks.map(task=>client.health(task)));$('connect-result').textContent=checks.map((item,i)=>tasks[i]+': '+item.status).join('\n');$('connection-badge').textContent='Connected';}
+ catch(error){$('connection-badge').textContent='Connection failed';throw error;}
+}
+showConnection();checkConnection().catch(error=>{$('connect-status').textContent=error.message;});
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{
  document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b===button)));
  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===button.dataset.tab));
 }));
 async function request(task,path,body){
- const headers={};if($('api-key').value)headers.Authorization='Bearer '+$('api-key').value;
- if(!(body instanceof FormData)){headers['Content-Type']='application/json';body=JSON.stringify(body);}
- const response=await fetch('/services/'+task+'/v1/'+path,{method:'POST',headers,body});
- if(!response.ok){let message='Request failed ('+response.status+')';try{const data=await response.json();message=typeof data.detail==='string'?data.detail:JSON.stringify(data.detail);}catch{}throw Error(message);}
- return task==='tts'?response.blob():response.json();
+ return client.request('/services/'+task+'/v1/'+path,{body,binary:task==='tts'});
 }
 function bind(formId,statusId,action){$(formId).addEventListener('submit',async event=>{
  event.preventDefault();const button=event.currentTarget.querySelector('button'),status=$(statusId);button.disabled=true;status.classList.remove('error');status.textContent='Working… first use may take longer while the model loads.';
  try{await action();status.textContent='Done.';}catch(error){status.classList.add('error');status.textContent=error.message;}finally{button.disabled=formId==='question-form'&&!tenant;}
 });}
 function upload(id){const file=$(id).files[0];if(!file)throw Error('Choose a file first.');if(file.size>10*1024*1024)throw Error('Choose a file smaller than 10 MB.');const body=new FormData();body.append('file',file);return body;}
+bind('connection-form','connect-status',async()=>{
+ const next=new MicroModelsClient($('base-url').value,{apiKey:$('api-key').value});
+ client=next;tenant=null;$('ask-button').disabled=true;$('document-name').textContent='Upload a document first.';$('question-result').textContent='';showConnection();await checkConnection();
+});
 bind('document-form','document-status',async()=>{
  tenant=null;$('ask-button').disabled=true;$('question-result').textContent='';$('document-result').textContent='';$('document-name').textContent='Preparing document…';
  const data=await request('document','document',upload('document-file'));

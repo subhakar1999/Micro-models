@@ -40,6 +40,10 @@ The UI uses the natural Kokoro voice by default. Install it with
 Its model downloads on first use and uses more memory than eSpeak.
 Use `run_ui.py --speech-quality fast` for the lightweight robotic eSpeak voice.
 
+Use **Connect your app** to configure a service base URL and get the JavaScript
+client. See [app integration](docs/app-integration.md) for browser origins,
+hosted HTTPS connections and document question examples.
+
 The Python environment and text model were prepared during development.
 
 Open **PowerShell** in `F:\Projects\Micro-models` and run:
